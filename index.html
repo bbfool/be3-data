@@ -1,0 +1,56 @@
+<html>
+<head>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<link rel="stylesheet" href="charting.css" />
+</head>
+<body>
+    <script type="text/javascript" src="charting.js"></script>
+    
+    <br />
+<section class="container">
+  <div class="left-half">
+    <br />
+    <div id="chart"></div>
+  </div>
+  <div class="right-half">
+      <div>
+          <label for="state">Select State</label>
+          <select name="state" id="state-select">
+  <option value="ID">Idaho</option>
+  <option value="IL">Illinois</option>
+  <option value="CA">California</option>
+  <option value="NY">New York</option>
+</select>
+      </div>
+      
+      Click a box to show/hide plots
+    <div>
+      <input type="checkbox" id="death" name="plots" value="death" checked>
+      <label for="death">Deaths</label>
+    </div>
+    <div>
+      <input type="checkbox" id="death.avg" name="plots" value="death.avg" checked>
+      <label for="death.avg">Average Deaths</label>
+    </div>
+    <br />
+    <div>
+      <input type="checkbox" id="hosp" name="plots" value="hosp" checked>
+      <label for="hosp">Hosp</label>
+    </div> 
+    <div>
+      <input type="checkbox" id="hosp.avg" name="plots" value="hosp.avg" checked>
+      <label for="hosp.avg">Avg Hosp</label>
+    </div>
+    <br />
+    <div>
+      <input type="checkbox" id="pos" name="plots" value="pos" checked>
+      <label for="pos">Positives</label>
+    </div>
+    <div>
+      <input type="checkbox" id="pos.avg" name="plots" value="pos.avg" checked>
+      <label for="pos.avg">Avg Positives</label>
+    </div>
+  </div>
+</section>
+</body>
+</html>
