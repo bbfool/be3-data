@@ -85,9 +85,9 @@ function addSeries(plotInfo) {
 }
 
 function removeSeries(chartSeries) {
-    if (chartSeries['series']){
+    if ("series" in chartSeries){
         chart.removeSeries(chartSeries['series']);
-        chartSeries['series'] = null;        
+        delete chartSeries['series'];// = null;        
     }
 }
 
@@ -122,7 +122,7 @@ function showSomeData() {
             return response.json();
         })
         .then(jsonData => {
-
+            removeAllSeries(dataSeries);
             dataSeries = {};
             ascendingChartData = jsonData.reverse();
 
@@ -143,16 +143,13 @@ function showSomeData() {
                 chart = LightweightCharts.createChart(chartDiv, { width: chartDiv.offsetWidth, height: (window.innerHeight * 0.95) });
             }
 
-            dataSeries["death"] = { "title": "Deaths", "data": chartSeriesDeaths, "series": null, "color": "firebrick" };
-            dataSeries["death.avg"] = { "title": "Average Deaths", "data": avgDeaths, "series": null, "color": "orangered" };
-            dataSeries["pos"] = { "title": "Pos Increase", "data": chartSeriesPositive, "series": null, "color": "darkseagreen" };
-            dataSeries["pos.avg"] = { "title": "Avg Pos Increase", "data": avgPositive, "series": null, "color": "green" };
-            dataSeries["hosp"] = { "title": "Hospitalizations", "data": chartSeriesHosp, "series": null, "color": "orange" };
-            dataSeries["hosp.avg"] = { "title": "Average Hospitalizations", "data": avgHospitalizations, "series": null, "color": "salmon" };
+            dataSeries["death"] = { "title": "Deaths", "data": chartSeriesDeaths, "color": "firebrick" };
+            dataSeries["death.avg"] = { "title": "Average Deaths", "data": avgDeaths, "color": "orangered" };
+            dataSeries["pos"] = { "title": "Pos Increase", "data": chartSeriesPositive, "color": "darkseagreen" };
+            dataSeries["pos.avg"] = { "title": "Avg Pos Increase", "data": avgPositive, "color": "green" };
+            dataSeries["hosp"] = { "title": "Hospitalizations", "data": chartSeriesHosp, "color": "orange" };
+            dataSeries["hosp.avg"] = { "title": "Average Hospitalizations", "data": avgHospitalizations, "color": "salmon" };
 
-            for (let seriesDataKey in dataSeries) {
-                addSeries(dataSeries[seriesDataKey]);
-            }
             /*
                         seriesDeaths = addSeries(chart, chartSeriesDeaths, "Deaths", "firebrick")
                         seriesAvgDeath = addSeries(chart, avgDeaths, "Average Deaths", "orangered")
@@ -195,9 +192,9 @@ function showAppropriatePlots() {
     for (var checkbox of checkboxes) {
         var chartSeries = dataSeries[checkbox.value];
         if (checkbox.checked) {
-            //addSeries(chart, chartSeries['series'], chartSeries['title'], chartSeries['color'])
+            addSeries(chartSeries)
         } else {
-            chart.removeSeries(chartSeries['series']);
+            removeSeries(chartSeries);
         }
     }
 }
