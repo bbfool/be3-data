@@ -1,4 +1,8 @@
-
+var stateMap;  // will be initialized later when file is loaded
+var colors;
+const stateMapPath = "stateAbbrvMap.json";
+const statePopPath = "statePopData.json";
+const colorPath = "colors.json";
 
 var dataSeries = {};
 //chart reference to share later
@@ -33,6 +37,13 @@ function csvJSON(csv) {
 
     //return result; //JavaScript object
     return JSON.stringify(result); //JSON
+}
+
+function addToStateMap(popData) {
+    for (let stateEntry in stateMap) {
+        if (stateMap[stateEntry]["stateName"] in popData)
+            stateMap[stateEntry]['pop'] = popData[stateMap[stateEntry]["stateName"]]
+    }
 }
 
 function formatDate(date) {
@@ -85,10 +96,19 @@ function addSeries(plotInfo) {
 }
 
 function removeSeries(chartSeries) {
-    if ("series" in chartSeries){
+    if ("series" in chartSeries) {
         chart.removeSeries(chartSeries['series']);
         delete chartSeries['series'];// = null;        
     }
+}
+
+function lightenColor(color, percent) {
+    var num = parseInt(color.replace("#", ""), 16),
+        amt = Math.round(2.55 * percent),
+        R = (num >> 16) + amt,
+        B = (num >> 8 & 0x00FF) + amt,
+        G = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
 }
 
 function calculateQuotient(numeratorSeries, denominatorSeries) {
@@ -109,9 +129,20 @@ function removeAllSeries() {
     }
 }
 
+function constructPopulationSeries(state, length) {
+    var population = stateMap[state]['pop'];
+    //get population, construct an array of specified length
+    return Array.apply(null, Array(length)).map(function () { return population });
+}
+
 function showSomeData() {
-    if(!state){
+    if (!state) {
         state = "ID"
+    }
+
+    if(plotsList)
+    {
+        console.log(`will be able to plot data for: ${plotsList}`)
     }
 
     const data_url = `https://api.covidtracking.com/v1/states/${state}/daily.json`;
@@ -132,6 +163,11 @@ function showSomeData() {
 
             chartSeriesPositive = formatSeriesForPlot("date", "positiveIncrease", ascendingChartData);
 
+            populationSeries = constructPopulationSeries(state, ascendingChartData.length)
+
+            deathsByPop = calculateQuotient(chartSeriesDeaths, populationSeries);
+            positiveByPop = calculateQuotient(chartSeriesPositive, populationSeries);
+
             avgDeaths = calculateAverage(chartSeriesDeaths, 7);
             avgHospitalizations = calculateAverage(chartSeriesHosp, 10);
             avgPositive = calculateAverage(chartSeriesPositive, 10);
@@ -150,40 +186,7 @@ function showSomeData() {
             dataSeries["hosp"] = { "title": "Hospitalizations", "data": chartSeriesHosp, "color": "orange" };
             dataSeries["hosp.avg"] = { "title": "Average Hospitalizations", "data": avgHospitalizations, "color": "salmon" };
 
-            /*
-                        seriesDeaths = addSeries(chart, chartSeriesDeaths, "Deaths", "firebrick")
-                        seriesAvgDeath = addSeries(chart, avgDeaths, "Average Deaths", "orangered")
-                        seriesHosp = addSeries(chart, chartSeriesHosp, "Hospitalizations", "orange")
-                        seriesAvgHosp = addSeries(chart, avgHospitalizations, "Average Hospitalizations", "salmon")
-                        seriesPos = addSeries(chart, chartSeriesPositive, "Positive Increase", "green")
-                        seriesAvgPos = addSeries(chart, avgPositive, "Positive Increase", "darkseagreen")
-            */
-
             showAppropriatePlots()
-            //
-            /* */
-
-            /*
-      const lineSeriesDeath = chart.addLineSeries(
-          {
-              color: 'green',
-          axisLabelVisible: true,
-          title: 'Deaths'
-          });
-      
-      lineSeriesDeath.setData(chartSeriesDeaths); 
-      
-      const lineSeriesHosp = chart.addLineSeries(
-          {
-              color: 'blue',
-          axisLabelVisible: true,
-          title: 'Hospitalization'
-          });
-      
-      lineSeriesHosp.setData(chartSeriesHosp);
-      */
-            //  console.log(data)
-            //return data;
         });
 }
 
@@ -222,4 +225,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
 }, false);
 
-showSomeData();
+fetch(stateMapPath)
+    .then(response => response.json())
+    .then(json => {
+        stateMap = {};
+        for (let stateEntry in json) {
+            stateMap[stateEntry] = { stateName: json[stateEntry] }
+        }
+    }
+    )
+    .then(() => fetch(statePopPath))
+    .then(response => response.json())
+    .then(popJson => { addToStateMap(popJson); }    
+    ).then(() => fetch(colorPath))
+    .then(response => response.json())
+    .then(colorsJson => {colors = colorsJson})
+    .then(() => {
+        showSomeData();
+    });
