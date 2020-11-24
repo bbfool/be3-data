@@ -9,6 +9,11 @@ var dataSeries = {};
 var chart;
 var state;
 
+var plotInfo = {
+    "deathIncrease": "Deaths",
+    "hospitalizedIncrease": "Hospitalized",
+    "positiveIncrease": "Positive"
+}
 
 function csvJSON(csv) {
 
@@ -44,6 +49,103 @@ function addToStateMap(popData) {
         if (stateMap[stateEntry]["stateName"] in popData)
             stateMap[stateEntry]['pop'] = popData[stateMap[stateEntry]["stateName"]]
     }
+}
+
+function constructPlotSeries(plotId, plotTitle, plotData, plotColor) {
+    var subPlots = {}
+    subPlots[plotId] = {
+        "title": plotTitle,
+        "data": formatSeriesForPlot("date", plotId, plotData["mainDataSource"]),
+        "color": plotColor
+    }
+
+    subPlots[plotId + ".avg"] = {
+        "title": "Avg " + plotTitle,
+        "data": calculateAverage(subPlots[plotId]["data"], 7),
+        "color": lightenColor(plotColor, 25)
+    }
+
+    subPlots[plotId + ".byPop"] = {
+        "title": plotTitle + " by Pop",
+        "data": calculateQuotient(subPlots[plotId]["data"], plotData["populationDataSource"]),
+        "color": lightenColor(plotColor, -25)
+    }
+
+    return subPlots;
+}
+
+function setUpPlots(chartDataSource) {
+
+    var plottingData = {
+        "mainDataSource": chartDataSource,
+        "populationDataSource": constructPopulationSeries(state, chartDataSource.length)
+    }
+    var colorIndex = 0;
+    for (let plot in plotInfo) {
+        var subPlots = constructPlotSeries(
+            plot,
+            plotInfo[plot],
+            plottingData,
+            colors[colorIndex++]
+        );
+
+        for (let subPlot in subPlots) {
+            dataSeries[subPlot] = subPlots[subPlot];
+        }
+    }
+
+    //dataseries objects are populated, no need to return
+}
+
+function addBox(id, labelTitle, myDiv) {
+    var checkbox = document.createElement('input');
+    checkbox.type = "checkbox";
+    checkbox.name = "plots";
+    checkbox.value = id;
+    checkbox.id = id;
+    checkbox.checked = true;
+
+    var label = document.createElement('label');
+
+    label.htmlFor = id;
+    label.appendChild(document.createTextNode(labelTitle));
+    myDiv.appendChild(checkbox);
+    myDiv.appendChild(label);
+
+    console.log(`will add box for ${id} with title ${labelTitle}`)
+}
+
+function setupCheckBoxes() {
+    var ctrlBoxes = document.getElementById('control-boxes');
+    var controlBoxesDiv = document.getElementById("control-boxes");
+
+    for (let plotName in plotInfo) {
+        addBox(plotName, plotInfo[plotName], controlBoxesDiv);
+        controlBoxesDiv.appendChild(document.createElement('br'));
+        addBox(plotName + ".byPop", `${plotInfo[plotName]} by Pop`, controlBoxesDiv);
+        controlBoxesDiv.appendChild(document.createElement('br'));
+        addBox(plotName + ".avg", `Avg ${plotInfo[plotName]}`, controlBoxesDiv)
+        controlBoxesDiv.appendChild(document.createElement('hr'));
+    }
+    var checkboxes = document.querySelectorAll('input[type=checkbox][name=plots]');
+
+        for (var checkbox of checkboxes) {
+            checkbox.addEventListener('change', function (event) {
+                var chartSeries = dataSeries[event.target.value];
+                if (event.target.checked) {
+                    addSeries(chartSeries)
+                } else {
+                    removeSeries(chartSeries);
+                }
+            });
+        }
+
+        const stateSelect = document.getElementById('state-select')
+        stateSelect.addEventListener('change', function (event) {
+            state = event.target.value;
+
+            showSomeData();
+        });
 }
 
 function formatDate(date) {
@@ -116,7 +218,7 @@ function calculateQuotient(numeratorSeries, denominatorSeries) {
     for (i = 0; i < numeratorSeries.length; i++) {
         results.push({
             time: numeratorSeries[i].time,
-            value: numeratorSeries[i].value / (.00001 + denominatorSeries[i].value)
+            value: numeratorSeries[i].value / (.00001 + denominatorSeries[i])
         })
     }
 
@@ -140,8 +242,7 @@ function showSomeData() {
         state = "ID"
     }
 
-    if(plotsList)
-    {
+    if (plotsList) {
         console.log(`will be able to plot data for: ${plotsList}`)
     }
 
@@ -157,35 +258,37 @@ function showSomeData() {
             dataSeries = {};
             ascendingChartData = jsonData.reverse();
 
-            chartSeriesDeaths = formatSeriesForPlot("date", "deathIncrease", ascendingChartData);
-
-            chartSeriesHosp = formatSeriesForPlot("date", "hospitalizedIncrease", ascendingChartData);
-
-            chartSeriesPositive = formatSeriesForPlot("date", "positiveIncrease", ascendingChartData);
-
-            populationSeries = constructPopulationSeries(state, ascendingChartData.length)
-
-            deathsByPop = calculateQuotient(chartSeriesDeaths, populationSeries);
-            positiveByPop = calculateQuotient(chartSeriesPositive, populationSeries);
-
-            avgDeaths = calculateAverage(chartSeriesDeaths, 7);
-            avgHospitalizations = calculateAverage(chartSeriesHosp, 10);
-            avgPositive = calculateAverage(chartSeriesPositive, 10);
-
-            deathPerPositive = calculateQuotient(avgDeaths, avgPositive);
-
+            setUpPlots(ascendingChartData);
+            /*
+                        chartSeriesDeaths = formatSeriesForPlot("date", "deathIncrease", ascendingChartData);
+            
+                        chartSeriesHosp = formatSeriesForPlot("date", "hospitalizedIncrease", ascendingChartData);
+            
+                        chartSeriesPositive = formatSeriesForPlot("date", "positiveIncrease", ascendingChartData);
+            
+                        populationSeries = constructPopulationSeries(state, ascendingChartData.length)
+            
+                        deathsByPop = calculateQuotient(chartSeriesDeaths, populationSeries);
+                        positiveByPop = calculateQuotient(chartSeriesPositive, populationSeries);
+            
+                        avgDeaths = calculateAverage(chartSeriesDeaths, 7);
+                        avgHospitalizations = calculateAverage(chartSeriesHosp, 10);
+                        avgPositive = calculateAverage(chartSeriesPositive, 10);
+            
+                        deathPerPositive = calculateQuotient(avgDeaths, avgPositive);
+            */
             if (!chart) {
                 const chartDiv = document.getElementById('chart');
                 chart = LightweightCharts.createChart(chartDiv, { width: chartDiv.offsetWidth, height: (window.innerHeight * 0.95) });
             }
-
-            dataSeries["death"] = { "title": "Deaths", "data": chartSeriesDeaths, "color": "firebrick" };
-            dataSeries["death.avg"] = { "title": "Average Deaths", "data": avgDeaths, "color": "orangered" };
-            dataSeries["pos"] = { "title": "Pos Increase", "data": chartSeriesPositive, "color": "darkseagreen" };
-            dataSeries["pos.avg"] = { "title": "Avg Pos Increase", "data": avgPositive, "color": "green" };
-            dataSeries["hosp"] = { "title": "Hospitalizations", "data": chartSeriesHosp, "color": "orange" };
-            dataSeries["hosp.avg"] = { "title": "Average Hospitalizations", "data": avgHospitalizations, "color": "salmon" };
-
+            /*
+                        dataSeries["death"] = { "title": "Deaths", "data": chartSeriesDeaths, "color": "firebrick" };
+                        dataSeries["death.avg"] = { "title": "Average Deaths", "data": avgDeaths, "color": "orangered" };
+                        dataSeries["pos"] = { "title": "Pos Increase", "data": chartSeriesPositive, "color": "darkseagreen" };
+                        dataSeries["pos.avg"] = { "title": "Avg Pos Increase", "data": avgPositive, "color": "green" };
+                        dataSeries["hosp"] = { "title": "Hospitalizations", "data": chartSeriesHosp, "color": "orange" };
+                        dataSeries["hosp.avg"] = { "title": "Average Hospitalizations", "data": avgHospitalizations, "color": "salmon" };
+            */
             showAppropriatePlots()
         });
 }
@@ -202,28 +305,7 @@ function showAppropriatePlots() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    var checkboxes = document.querySelectorAll('input[type=checkbox][name=plots]');
 
-    for (var checkbox of checkboxes) {
-        checkbox.addEventListener('change', function (event) {
-            var chartSeries = dataSeries[event.target.value];
-            if (event.target.checked) {
-                addSeries(chartSeries)
-            } else {
-                removeSeries(chartSeries);
-            }
-        });
-    }
-
-    const stateSelect = document.getElementById('state-select')
-    stateSelect.addEventListener('change', function (event) {
-        state = event.target.value;
-
-        showSomeData();
-    });
-
-}, false);
 
 fetch(stateMapPath)
     .then(response => response.json())
@@ -236,10 +318,17 @@ fetch(stateMapPath)
     )
     .then(() => fetch(statePopPath))
     .then(response => response.json())
-    .then(popJson => { addToStateMap(popJson); }    
+    .then(popJson => { addToStateMap(popJson); }
     ).then(() => fetch(colorPath))
     .then(response => response.json())
-    .then(colorsJson => {colors = colorsJson})
+    .then(colorsJson => { colors = colorsJson })
+    .then(() => {
+        setupCheckBoxes()
+    })
     .then(() => {
         showSomeData();
+    })
+    .then(() => {
+        
     });
+
