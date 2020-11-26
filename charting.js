@@ -62,13 +62,13 @@ function constructPlotSeries(plotId, plotTitle, plotData, plotColor) {
     subPlots[plotId + ".avg"] = {
         "title": "Avg " + plotTitle,
         "data": calculateAverage(subPlots[plotId]["data"], 7),
-        "color": lightenColor(plotColor, 25)
+        "color": lightenColor(plotColor, 50)
     }
 
     subPlots[plotId + ".byPop"] = {
         "title": plotTitle + " by Pop",
         "data": calculateQuotient(subPlots[plotId]["data"], plotData["populationDataSource"]),
-        "color": lightenColor(plotColor, -25)
+        "color": lightenColor(plotColor, -50)
     }
 
     return subPlots;
@@ -183,11 +183,11 @@ function calculateAverage(data, window) {
 }
 
 function addSeries(plotInfo) {
-    //chartSeries['data'], chartSeries['title'], chartSeries['color'])
-
+    //chartSeries['data'], chartSeries['title'], chartSeries['color']
+    var chartColor = `#${plotInfo['color']}`.toUpperCase()
     const lineSeries = chart.addLineSeries(
         {
-            color: plotInfo['color'],
+            color: chartColor, //${plotInfo['color']}
             axisLabelVisible: true,
             title: plotInfo['title']
         });
@@ -210,7 +210,7 @@ function lightenColor(color, percent) {
         R = (num >> 16) + amt,
         B = (num >> 8 & 0x00FF) + amt,
         G = (num & 0x0000FF) + amt;
-    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
+    return (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1).toUpperCase();
 }
 
 function calculateQuotient(numeratorSeries, denominatorSeries) {
@@ -234,7 +234,7 @@ function removeAllSeries() {
 function constructPopulationSeries(state, length) {
     var population = stateMap[state]['pop'];
     //get population, construct an array of specified length
-    return Array.apply(null, Array(length)).map(function () { return population });
+    return Array.apply(null, Array(length)).map(function () { return (population / 100000.0) });
 }
 
 function showSomeData() {
