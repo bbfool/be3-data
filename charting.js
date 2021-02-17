@@ -45,10 +45,19 @@ function csvJSON(csv) {
 }
 
 function addToStateMap(popData) {
+    var stateSelect = document.getElementById('state-select')
+
     for (let stateEntry in stateMap) {
-        if (stateMap[stateEntry]["stateName"] in popData)
+        if (stateMap[stateEntry]["stateName"] in popData) {
             stateMap[stateEntry]['pop'] = popData[stateMap[stateEntry]["stateName"]]
+
+            var option = document.createElement("option");
+            option.text = stateMap[stateEntry]["stateName"];
+            option.value = stateEntry;
+            stateSelect.add(option);
+        }
     }
+    stateSelect.value = state;
 }
 
 function constructPlotSeries(plotId, plotTitle, plotData, plotColor) {
@@ -129,23 +138,23 @@ function setupCheckBoxes() {
     }
     var checkboxes = document.querySelectorAll('input[type=checkbox][name=plots]');
 
-        for (var checkbox of checkboxes) {
-            checkbox.addEventListener('change', function (event) {
-                var chartSeries = dataSeries[event.target.value];
-                if (event.target.checked) {
-                    addSeries(chartSeries)
-                } else {
-                    removeSeries(chartSeries);
-                }
-            });
-        }
-
-        const stateSelect = document.getElementById('state-select')
-        stateSelect.addEventListener('change', function (event) {
-            state = event.target.value;
-
-            showSomeData();
+    for (var checkbox of checkboxes) {
+        checkbox.addEventListener('change', function (event) {
+            var chartSeries = dataSeries[event.target.value];
+            if (event.target.checked) {
+                addSeries(chartSeries)
+            } else {
+                removeSeries(chartSeries);
+            }
         });
+    }
+
+    const stateSelect = document.getElementById('state-select')
+    stateSelect.addEventListener('change', function (event) {
+        state = event.target.value;
+
+        showSomeData();
+    });
 }
 
 function formatDate(date) {
@@ -238,10 +247,7 @@ function constructPopulationSeries(state, length) {
 }
 
 function showSomeData() {
-    if (!state) {
-        state = "ID"
-    }
-
+    
     if (plotsList) {
         console.log(`will be able to plot data for: ${plotsList}`)
     }
@@ -306,6 +312,9 @@ function showAppropriatePlots() {
 }
 
 
+if (!state) {
+    state = "ID"
+}
 
 fetch(stateMapPath)
     .then(response => response.json())
@@ -329,6 +338,6 @@ fetch(stateMapPath)
         showSomeData();
     })
     .then(() => {
-        
+
     });
 
