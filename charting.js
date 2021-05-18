@@ -255,7 +255,7 @@ function showSomeData() {
     const data_url = `https://api.covidtracking.com/v1/states/${state}/daily.json`;
 
     removeAllSeries();
-    fetch(data_url)
+    fetch(data_url, {mode: 'no-cors'})
         .then(response => {
             return response.json();
         })
