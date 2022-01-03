@@ -252,10 +252,13 @@ function showSomeData() {
         console.log(`will be able to plot data for: ${plotsList}`)
     }
 
-    const data_url = `https://api.covidtracking.com/v1/states/${state}/daily.json`;
+    const data_url = `https://api.covidtracking.com/v1/states/${state.toLowerCase()}/daily.json`;
 
     removeAllSeries();
-    fetch(data_url, {referrerPolicy: 'no-referrer', mode: 'no-cors'})
+    fetch(data_url, {method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        }})
         .then(response => {
             return response.json();
         })
